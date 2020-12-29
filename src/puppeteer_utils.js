@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const _ = require("highland");
 const url = require("url");
 const mapStackTrace = require("sourcemapped-stacktrace-node").default;
-const path = require("path");
+const path = require("path").posix;
 const fs = require("fs");
 const { createTracker, augmentTimeoutError } = require("./tracker");
 
@@ -210,7 +210,7 @@ const crawl = async opt => {
     const route = pageUrl.replace(basePath, "");
 
     let skipExistingFile = false;
-    const routePath = route.replace(/\//g, path.sep);
+    const routePath = route
     const { ext } = path.parse(routePath);
     if (ext !== ".html" && ext !== "") {
       const filePath = path.join(sourceDir, routePath);
@@ -238,7 +238,10 @@ const crawl = async opt => {
         await page.setUserAgent(options.userAgent);
         const tracker = createTracker(page);
         try {
-          await page.goto(pageUrl, { waitUntil: "networkidle0" });
+          await page.goto(pageUrl, {
+            timeout: options.puppeteer.timeout,
+            waitUntil: "networkidle2"
+          });
         } catch (e) {
           e.message = augmentTimeoutError(e.message, tracker);
           throw e;

@@ -3,7 +3,7 @@ const http = require("http");
 const express = require("express");
 const serveStatic = require("serve-static");
 const fallback = require("express-history-api-fallback");
-const path = require("path");
+const path = require("path").posix;
 const nativeFs = require("fs");
 const mkdirp = require("mkdirp");
 const minify = require("html-minifier").minify;
@@ -24,7 +24,8 @@ const defaultOptions = {
   // https://github.com/stereobooster/react-snap/issues/120
   headless: true,
   puppeteer: {
-    cache: true
+    cache: true,
+    timeout: 60 * 1000
   },
   puppeteerArgs: [],
   puppeteerExecutablePath: undefined,
