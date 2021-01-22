@@ -1,5 +1,11 @@
 # react-snap [![Build Status](https://travis-ci.org/stereobooster/react-snap.svg?branch=master)](https://travis-ci.org/stereobooster/react-snap) [![npm](https://img.shields.io/npm/v/react-snap.svg)](https://www.npmjs.com/package/react-snap) ![npm](https://img.shields.io/npm/dt/react-snap.svg) [![Twitter Follow](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/stereobooster)
 
+## This is a fork of the original repository by @stereobooster
+
+We at [nata.house](https://natahouse.com/en) have forked this lib in order to add some functionality,docs and fixes to keep using it smoothly for our projects, while the original repo is paused.  Read more [here](doc/nh-fork.md).
+
+---
+
 Pre-renders a web app into static HTML. Uses [Headless Chrome](https://github.com/GoogleChrome/puppeteer) to crawl all available links starting from the root. Heavily inspired by [prep](https://github.com/graphcool/prep) and [react-snapshot](https://github.com/geelen/react-snapshot), but written from scratch. Uses best practices to get the best loading performance.
 
 ## 😍 Features
@@ -136,6 +142,30 @@ Experimental feature - requires improvements.
 Use `inlineCss: true` to enable this feature.
 
 TODO: as soon as this feature is stable, it should be enabled by default.
+
+### exclude
+
+You can define a list of blobs that tells `react-snap` which routes it should ignore when crawling.
+
+This is specially useful when you have parts of your app that don't need to be pre-rendered. It can be very helpful if you have pages filled with client-side logic, that causes `react-snap` to maybe behave on unexpected ways. Just exclude these complex rotues!
+
+### include
+
+`react-snap` will look for all the available routes it can find, but maybe your application doesn't explicitly list these routes and the crawler has been unable to find and pre-render them. In this case, you can specify routes that will be crawled no matter what.
+
+`react-snap` will also crawl all of the subsequent routes found from the ones listed on `include`.
+
+**Important:** Make sure that your `exclude` and `include` configurations do not overlap, as this is not make sense and will not be allowed to execute!
+
+### useRouteAsFileName
+
+Sometimes you may want react-snap to output formats different than `/route/index.html` in order to use it more smoothly with some web servers or CDNs. Currently there is one built-in alternative for output formats, which changes `/route/index.html` to just `/route.html`.
+
+Another example would be: `/path/to/route/index.html` becomes `/path/to/route.html`.
+
+### puppeteerIgnoreHTTPSErrors
+
+This might be another useful config specially when applying `react-snap` to older or bigger unstable projects, that might have several failing https requests. By setting this to true you may be able to bypass some errors and successfully pre-render parts of your app.
 
 ## ⚠️ Caveats
 

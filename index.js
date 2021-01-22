@@ -10,6 +10,8 @@ const minify = require("html-minifier").minify;
 const url = require("url");
 const minimalcss = require("minimalcss");
 const CleanCSS = require("clean-css");
+const glob = require("glob-to-regexp");
+const isGlob = require("is-glob");
 const twentyKb = 20 * 1024;
 
 const defaultOptions = {
@@ -19,6 +21,7 @@ const defaultOptions = {
   destination: null,
   concurrency: 4,
   include: ["/"],
+  exclude: [],
   userAgent: "ReactSnap",
   // 4 params below will be refactored to one: `puppeteer: {}`
   // https://github.com/stereobooster/react-snap/issues/120
@@ -64,6 +67,9 @@ const defaultOptions = {
   inlineCss: false,
   //# feature creeps to generate screenshots
   saveAs: "html",
+  // if true latest path becomes file name: '{route}.html' instead of 'route/index.html'
+  // or 'path/to/{route}.html' instead of 'path/to/route/index.html'
+  useRouteAsFileName: false,
   crawl: true,
   waitFor: false,
   externalServer: false,
@@ -94,7 +100,25 @@ const defaults = userOptions => {
   if (!options.include || !options.include.length) {
     console.log("🔥  include option should be an non-empty array");
     exit = true;
+  } else {
+    const hasInvalidInclude = options.include.some((path) => isGlob(path));
+    if (hasInvalidInclude) {
+      console.log("🔥  you may not use glob patterns for include.");
+      exit = true;
+    }
+  
+    if (options.exclude.length) {
+      const excludeGlobs = options.exclude.map(g => glob(g, { extended: true, globstar: true}));
+      const hasOverlappingInclude = excludeGlobs.some((excludeGlob) =>
+        options.include.some(pagePath => excludeGlob.test(pagePath))
+      );
+      if (hasOverlappingInclude) {
+        console.log("🔥  overlapping include and exclude configs were detected.");
+        exit = true;
+      }
+    }
   }
+
   if (options.preloadResources) {
     console.log(
       "🔥  preloadResources option deprecated. Use preloadImages or cacheAjaxRequests"
@@ -606,13 +630,28 @@ const saveAsHtml = async ({ page, filePath, options, route, fs }) => {
   const minifiedContent = options.minifyHtml
     ? minify(content, options.minifyHtml)
     : content;
+  const isRootRoute = route == '/'
+  const hasTrailingSlash = route.endsWith('/')
+
   filePath = filePath.replace(/\//g, path.sep);
-  if (route.endsWith(".html")) {
+
+  // remove trailing / to prevent saving with filename '/route.html'
+  if (hasTrailingSlash && !isRootRoute) {
+    filePath = filePath.slice(0, -1)
+    route = route.slice(0, -1)
+  }
+
+  // saving as 200.html, 404.html
+  // if useRouteAsFileName: route1.html, route2.html...
+  if (route.endsWith(".html") || (options.useRouteAsFileName && !isRootRoute)) {
     if (route.endsWith("/404.html") && !title.includes("404"))
       console.log('⚠️  warning: 404 page title does not contain "404" string');
     mkdirp.sync(path.dirname(filePath));
-    fs.writeFileSync(filePath, minifiedContent);
+
+    const outputPath = route.endsWith(".html") ? filePath :  `${filePath}.html`
+    fs.writeFileSync(outputPath, minifiedContent);
   } else {
+    // saving as route1/index.html, route2/index.html...
     if (title.includes("404"))
       console.log(`⚠️  warning: page not found ${route}`);
     mkdirp.sync(filePath);
