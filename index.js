@@ -25,7 +25,7 @@ const defaultOptions = {
   headless: true,
   puppeteer: {
     cache: true,
-    timeout: 60 * 1000
+    timeout: 300 * 1000
   },
   puppeteerArgs: [],
   puppeteerExecutablePath: undefined,
